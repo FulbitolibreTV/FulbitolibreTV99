@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Agenda Deportiva - Partidos de Hoy</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f2f5;
+      padding: 20px;
+      margin: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #1a1a1a;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .partido {
+      background: white;
+      margin: 15px 0;
+      padding: 18px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-left: 4px solid #e50914;
+    }
+    .hora {
+      font-weight: bold;
+      color: #e50914;
+      font-size: 1.1em;
+    }
+    .equipos {
+      font-size: 1.2em;
+      margin: 8px 0;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 16px;
+      background: #e50914;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    .btn:hover {
+      background: #b20710;
+    }
+    .vacio {
+      text-align: center;
+      color: #666;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⚽ Partidos de Hoy</h1>
+    <div id="agenda">Cargando partidos...</div>
+  </div>
+
+  <script>
+    const API_KEY = 'bf4de732be074fef9a967c716a5fc4a2';
+    const URL = 'https://api.football-data.org/v4/matches';
+
+    async function cargarPartidos() {
+      try {
+        const response = await fetch(URL, {
+          headers: { 'X-Auth-Token': API_KEY }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const hoy = new Date().toISOString().split('T')[0]; // Formato: "2025-10-08"
+        const partidosHoy = data.matches.filter(m => m.utcDate.startsWith(hoy));
+
+        const contenedor = document.getElementById('agenda');
+
+        if (partidosHoy.length === 0) {
+          contenedor.innerHTML = '<p class="vacio">No hay partidos programados para hoy.</p>';
+          return;
+        }
+
+        let html = '';
+        partidosHoy.forEach(p => {
+          const fecha = new Date(p.utcDate);
+          const hora = fecha.toLocaleTimeString('es-ES', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+          });
+          const local = p.homeTeam?.name || 'Local';
+          const visitante = p.awayTeam?.name || 'Visitante';
+
+          html += `
+            <div class="partido">
+              <div class="hora">🕗 ${hora} (hora local del servidor)</div>
+              <div class="equipos"><strong>${local}</strong> vs <strong>${visitante}</strong></div>
+              <div>🏆 ${p.competition?.name || 'Competición desconocida'}</div>
+              <a href="https://www.starplus.com" class="btn" target="_blank">▶ Ver en Star+</a>
+            </div>
+          `;
+        });
+
+        contenedor.innerHTML = html;
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('agenda').innerHTML = 
+          `<p style="color:red; text-align:center;">❌ Error al cargar los partidos.<br>${error.message}</p>`;
+      }
+    }
+
+    // Cargar al iniciar
+    cargarPartidos();
+  </script>
+</body>
+</html>
